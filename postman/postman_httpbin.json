@@ -1,0 +1,669 @@
+{
+	"variables": [],
+	"info": {
+		"name": "httpbin",
+		"_postman_id": "c279fcdd-2ca3-559d-be49-193903ce46f7",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "/image",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\nlet type = postman.getGlobalVariable(\"type\");\n\npostman.clearGlobalVariable(\"type\");\n\ntests[\"Content-Type is \" + type] = postman.getResponseHeader(\"Content-Type\") == type ;"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\nlet types = [\"image/png\", \"image/jpeg\", \"image/webp\"];\nlet randomIndex = Math.floor((Math.random() * types.length));\nlet type = types[randomIndex];\npostman.setGlobalVariable(\"type\", type);\n"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/image",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "{{type}}",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": []
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/xml",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\n\ntests[\"Status code is 200\"] = responseCode.code === 200;\n\nconst json = xml2Json(responseBody);\ntests[\"Valid xml\"] = true\n\ntests[\"/slideshow/[title]\"] = json.slideshow.$.title \n   === \"Sample Slide Show\";\n\ntests[\"/slideshow/slide[0]/title\"] = json.slideshow.slide[0].title === \"Wake up to WonderWidgets!\";\n"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/xml",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"comments\": \"cheese was delicious\", \n    \"custemail\": \"john@example.com\", \n    \"custname\": \"John Doe\", \n    \"custtel\": \"0170\", \n    \"delivery\": \"13:45\", \n    \"size\": \"small\", \n    \"topping\": \"cheese\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/ip",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\n\nconst schema = {\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"type\":\"object\",\"properties\":{\"origin\":{\"type\":\"string\"}},\"required\":[\"origin\"]};\n\ntests[\"Status code is 200\"] = responseCode.code === 200;\nconst json = JSON.parse(responseBody);\ntests[\"Valid Json Schema\"] = tv4.validate(json, schema);\n"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/ip",
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": []
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/user-agent",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\n\nconst schema = {\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"type\":\"object\",\"properties\":{\"user-agent\":{\"type\":\"string\"}},\"required\":[\"user-agent\"]};\n\ntests[\"Status code is 200\"] = responseCode.code === 200;\nconst json = JSON.parse(responseBody);\ntests[\"Valid Json Schema\"] = tv4.validate(json, schema);\n"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/user-agent",
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": []
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/get",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\n\nconst schema ={\"$schema\":\"http://json-schema.org/draft-04/schema#\", \"type\":\"object\", \"properties\":{\"args\":{\"type\":\"object\", \"properties\":{}, \"additionalProperties\":{\"type\":\"string\"}, \"required\":[]}, \"data\":{\"type\":\"string\"}, \"files\":{\"type\":\"object\", \"properties\":{}, \"additionalProperties\":{\"type\":\"string\"}, \"required\":[]}, \"form\":{\"type\":\"object\", \"properties\":{}, \"additionalProperties\":{\"type\":\"string\"}, \"required\":[]}, \"headers\":{\"type\":\"object\", \"properties\":{}, \"required\":[]}, \"origin\":{\"type\":\"string\"}, \"url\":{\"type\":\"string\"}}, \"required\":[]};\nschema.required =  [\"args\",\"headers\",\"origin\",\"url\"];\n\ntests[\"Status code is 200\"] = responseCode.code === 200;\nconst json = JSON.parse(responseBody);\nconst validation = tv4.validateMultiple(json, schema);\nif (validation.valid) {\n   tests[\"Valid Json Schema\"] = true;    \n} else {\n   let message = \"\"; \n   for (let key in validation.errors) { \n       let e = validation.errors[key]; \n       message += `${e.dataPath} => ${e.message} || `;\n   }\n   throw Error(message);\n}\n\nconst keys = Object.keys(json.args);\ntests[\"Has no args\"] = keys.length === 0;\n"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/get",
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": []
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/get?params",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\n\nconst schema ={\"$schema\":\"http://json-schema.org/draft-04/schema#\", \"type\":\"object\", \"properties\":{\"args\":{\"type\":\"object\", \"properties\":{}, \"additionalProperties\":{\"type\":\"string\"}, \"required\":[]}, \"data\":{\"type\":\"string\"}, \"files\":{\"type\":\"object\", \"properties\":{}, \"additionalProperties\":{\"type\":\"string\"}, \"required\":[]}, \"form\":{\"type\":\"object\", \"properties\":{}, \"additionalProperties\":{\"type\":\"string\"}, \"required\":[]}, \"headers\":{\"type\":\"object\", \"properties\":{}, \"required\":[]}, \"origin\":{\"type\":\"string\"}, \"url\":{\"type\":\"string\"}}, \"required\":[]};\nschema.required = [\"args\", \"origin\", \"headers\", \"url\"];\nschema.properties.args.required = [\"id\", \"gender\"];\n\n\ntests[\"Status code is 200\"] = responseCode.code === 200;\nconst json = JSON.parse(responseBody);\n\nconst validation = tv4.validateMultiple(json, schema);\nif (validation.valid) {\n   tests[\"Valid Json Schema\"] = true;    \n} else {\n   let message = \"\"; \n   for (let key in validation.errors) { \n       let e = validation.errors[key]; \n       message += `${e.dataPath} => ${e.message} || `;\n   }\n   throw Error(message);\n}\n\n\ntests[\"Has expected args\"] = (json.args.id === \"1\") && (json.args.gender===\"MALE\");\n"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/get?id=1&gender=MALE",
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": []
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/status/{status}",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\n\ntests[\"Status code - Not modified\"] = responseCode.code === 304;\n"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/status/304",
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": []
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/cache with etag",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\n\ntests[\"Status code - Not modified\"] = responseCode.code === 304;\n"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/cache",
+				"method": "GET",
+				"header": [
+					{
+						"key": "If-None-Match",
+						"value": "a",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": []
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/headers",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\n\ntests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Content-Type json\"] = postman.getResponseHeader(\"Content-Type\") === \"application/json\";\n\nlet json = JSON.parse(responseBody);\ntests[\"Header X-Requested-With\"] = json.headers[\"X-Requested-With\"] === \"httpbin\";"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/headers",
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Requested-With",
+						"value": "httpbin",
+						"description": ""
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": []
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/response-headers",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\n\nconst schema = {\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"type\":\"object\",\"properties\":{\"Content-Length\":{\"type\":\"string\"},\"Content-Type\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"Server\":{\"type\":\"string\"}},\"required\":[\"Content-Length\",\"Content-Type\",\"Server\"]};\n\ntests[\"Status code is 200\"] = responseCode.code === 200;\n\n// Schema validation\nconst json = JSON.parse(responseBody);\nconst validation = tv4.validateMultiple(json, schema);\nif (validation.valid) {\n   tests[\"Valid Json Schema\"] = true;    \n} else {\n   let message = \"\"; \n   for (let key in validation.errors) { \n       let e = validation.errors[key]; \n       message += `${e.dataPath} => ${e.message} || `;\n   }\n   throw Error(message);\n}\n\n// Test value\ntests[\"Content-Length\"] = json[\"Content-Length\"] === \"137\";\n"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/response-headers?Content-Type=text%2Fplain%3B+charset%3DUTF-8&Server=httpbin",
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Requested-With",
+						"value": "httpbin",
+						"description": ""
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": []
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/delay",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\n\ntests[\"Status code is 200\"] = responseCode.code === 200;\n\nconst validTime = responseTime < 2000 && responseTime > 200;\ntests[\"Response time is 2s\"] = validTime ;"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/delay/1",
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": []
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/post form-data",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\n\nconst schema ={\"$schema\":\"http://json-schema.org/draft-04/schema#\", \"type\":\"object\", \"properties\":{\"args\":{\"type\":\"object\", \"properties\":{}, \"additionalProperties\":{\"type\":\"string\"}, \"required\":[]}, \"data\":{\"type\":\"string\"}, \"files\":{\"type\":\"object\", \"properties\":{}, \"additionalProperties\":{\"type\":\"string\"}, \"required\":[]}, \"form\":{\"type\":\"object\", \"properties\":{}, \"additionalProperties\":{\"type\":\"string\"}, \"required\":[]}, \"headers\":{\"type\":\"object\", \"properties\":{}, \"required\":[]}, \"origin\":{\"type\":\"string\"}, \"url\":{\"type\":\"string\"}}, \"required\":[]};\nschema.required = [\"form\", \"headers\"];\nschema.properties.form.required = \n  [\"comments\", \"custemail\", \"delivery\", \"size\", \"topping\"];\n\n\ntests[\"Status code is 200\"] = responseCode.code === 200;\nconst json = JSON.parse(responseBody);\n\nlet ct = json.headers[\"Content-Type\"] || \"\";\ntests[\"was form-data\"] = ct.indexOf(\"multipart/form-data\") !== -1;\n\nconst validation = tv4.validateMultiple(json, schema);\nif (validation.valid) {\n   tests[\"Valid Json Schema\"] = true;    \n} else {\n   let message = \"\"; \n   for (let key in validation.errors) { \n       let e = validation.errors[key]; \n       message += `${e.dataPath} => ${e.message} || `;\n   }\n   throw Error(message);\n}\n\n\ntests[\"Has expected args\"] = json.form.size === \"small\";"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/post",
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "comments",
+							"value": "dish was great!",
+							"type": "text",
+							"enabled": true
+						},
+						{
+							"key": "topping",
+							"value": "cheese",
+							"type": "text",
+							"enabled": true
+						},
+						{
+							"key": "size",
+							"value": "small",
+							"type": "text",
+							"enabled": true
+						},
+						{
+							"key": "delivery",
+							"value": "13:45",
+							"type": "text",
+							"enabled": true
+						},
+						{
+							"key": "custname",
+							"value": "John Doe",
+							"type": "text",
+							"enabled": true
+						},
+						{
+							"key": "custemail",
+							"value": "john@example.com",
+							"type": "text",
+							"enabled": true
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/post form-urlencoded",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\n\nconst schema ={\"$schema\":\"http://json-schema.org/draft-04/schema#\", \"type\":\"object\", \"properties\":{\"args\":{\"type\":\"object\", \"properties\":{}, \"additionalProperties\":{\"type\":\"string\"}, \"required\":[]}, \"data\":{\"type\":\"string\"}, \"files\":{\"type\":\"object\", \"properties\":{}, \"additionalProperties\":{\"type\":\"string\"}, \"required\":[]}, \"form\":{\"type\":\"object\", \"properties\":{}, \"additionalProperties\":{\"type\":\"string\"}, \"required\":[]}, \"headers\":{\"type\":\"object\", \"properties\":{}, \"required\":[]}, \"origin\":{\"type\":\"string\"}, \"url\":{\"type\":\"string\"}}, \"required\":[]};\nschema.required = [\"form\", \"headers\"];\nschema.properties.form.required = \n  [\"comments\", \"custemail\", \"delivery\", \"size\", \"topping\"];\n\n\ntests[\"Status code is 200\"] = responseCode.code === 200;\n\n\nconst json = JSON.parse(responseBody);\n\ntests[\"was url-encoded\"] = \n json.headers[\"Content-Type\"] === \"application/x-www-form-urlencoded\";\n\n\nconst validation = tv4.validateMultiple(json, schema);\nif (validation.valid) {\n   tests[\"Valid Json Schema\"] = true;    \n} else {\n   let message = \"\"; \n   for (let key in validation.errors) { \n       let e = validation.errors[key]; \n       message += `${e.dataPath} => ${e.message} || `;\n   }\n   throw Error(message);\n}\n\n\ntests[\"Has expected args\"] = json.form.size === \"small\";\n\n"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/post",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "comments",
+							"value": "chesse is delicious!",
+							"type": "text",
+							"enabled": true
+						},
+						{
+							"key": "custemail",
+							"value": "john@example.com",
+							"type": "text",
+							"enabled": true
+						},
+						{
+							"key": "custtel",
+							"value": "0170",
+							"type": "text",
+							"enabled": true
+						},
+						{
+							"key": "delivery",
+							"value": "13:45",
+							"type": "text",
+							"enabled": true
+						},
+						{
+							"key": "size",
+							"value": "small",
+							"type": "text",
+							"enabled": true
+						},
+						{
+							"key": "topping",
+							"value": "cheese",
+							"type": "text",
+							"enabled": true
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/post json body",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\n\nconst schema ={\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"type\":\"object\",\"properties\":{\"args\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"data\":{\"type\":\"string\"},\"files\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"json\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"form\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"headers\":{\"type\":\"object\",\"properties\":{},\"required\":[]},\"origin\":{\"type\":\"string\"},\"url\":{\"type\":\"string\"}},\"required\":[]};\nschema.required = [\"data\", \"json\"];\nschema.properties.json.required = \n  [\"comments\", \"custemail\", \"delivery\", \"size\", \"topping\"];\n\n\ntests[\"Status code is 200\"] = responseCode.code === 200;\n\n\nconst json = JSON.parse(responseBody);\n\ntests[\"was json body\"] = \n json.headers[\"Content-Type\"] === \"application/json\";\n\n\nconst validation = tv4.validateMultiple(json, schema);\nif (validation.valid) {\n   tests[\"Valid Json Schema\"] = true;    \n} else {\n   let message = \"\"; \n   for (let key in validation.errors) { \n       let e = validation.errors[key]; \n       message += `${e.dataPath} => ${e.message} || `;\n   }\n   throw Error(message);\n}\n\n\ntests[\"Has expected args\"] = json.json.size === \"small\";\n\n"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/post",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"comments\": \"cheese was delicious\", \n    \"custemail\": \"john@example.com\", \n    \"custname\": \"John Doe\", \n    \"custtel\": \"0170\", \n    \"delivery\": \"13:45\", \n    \"size\": \"small\", \n    \"topping\": \"cheese\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/put json body",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\n\nconst schema ={\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"type\":\"object\",\"properties\":{\"args\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"data\":{\"type\":\"string\"},\"files\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"json\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"form\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"headers\":{\"type\":\"object\",\"properties\":{},\"required\":[]},\"origin\":{\"type\":\"string\"},\"url\":{\"type\":\"string\"}},\"required\":[]};\nschema.required = [\"data\", \"json\"];\nschema.properties.json.required = \n  [\"comments\", \"custemail\", \"delivery\", \"size\", \"topping\"];\n\n\ntests[\"Status code is 200\"] = responseCode.code === 200;\n\n\nconst json = JSON.parse(responseBody);\n\ntests[\"was json body\"] = \n json.headers[\"Content-Type\"] === \"application/json\";\n\n\nconst validation = tv4.validateMultiple(json, schema);\nif (validation.valid) {\n   tests[\"Valid Json Schema\"] = true;    \n} else {\n   let message = \"\"; \n   for (let key in validation.errors) { \n       let e = validation.errors[key]; \n       message += `${e.dataPath} => ${e.message} || `;\n   }\n   throw Error(message);\n}\n\n\ntests[\"Has expected args\"] = json.json.size === \"small\";\n\n"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/put",
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"comments\": \"cheese was delicious\", \n    \"custemail\": \"john@example.com\", \n    \"custname\": \"John Doe\", \n    \"custtel\": \"0170\", \n    \"delivery\": \"13:45\", \n    \"size\": \"small\", \n    \"topping\": \"cheese\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/patch json body",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\n\nconst schema ={\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"type\":\"object\",\"properties\":{\"args\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"data\":{\"type\":\"string\"},\"files\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"json\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"form\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"headers\":{\"type\":\"object\",\"properties\":{},\"required\":[]},\"origin\":{\"type\":\"string\"},\"url\":{\"type\":\"string\"}},\"required\":[]};\nschema.required = [\"data\", \"json\"];\nschema.properties.json.required = \n  [\"comments\", \"custemail\", \"delivery\", \"size\", \"topping\"];\n\n\ntests[\"Status code is 200\"] = responseCode.code === 200;\n\n\nconst json = JSON.parse(responseBody);\n\ntests[\"was json body\"] = \n json.headers[\"Content-Type\"] === \"application/json\";\n\n\nconst validation = tv4.validateMultiple(json, schema);\nif (validation.valid) {\n   tests[\"Valid Json Schema\"] = true;    \n} else {\n   let message = \"\"; \n   for (let key in validation.errors) { \n       let e = validation.errors[key]; \n       message += `${e.dataPath} => ${e.message} || `;\n   }\n   throw Error(message);\n}\n\n\ntests[\"Has expected args\"] = json.json.size === \"small\";\n\n"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/patch",
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"comments\": \"cheese was delicious\", \n    \"custemail\": \"john@example.com\", \n    \"custname\": \"John Doe\", \n    \"custtel\": \"0170\", \n    \"delivery\": \"13:45\", \n    \"size\": \"small\", \n    \"topping\": \"cheese\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/delete json body",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\n\nconst schema ={\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"type\":\"object\",\"properties\":{\"args\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"data\":{\"type\":\"string\"},\"files\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"json\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"form\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"headers\":{\"type\":\"object\",\"properties\":{},\"required\":[]},\"origin\":{\"type\":\"string\"},\"url\":{\"type\":\"string\"}},\"required\":[]};\nschema.required = [\"data\", \"json\"];\nschema.properties.json.required = \n  [\"comments\", \"custemail\", \"delivery\", \"size\", \"topping\"];\n\n\ntests[\"Status code is 200\"] = responseCode.code === 200;\n\n\nconst json = JSON.parse(responseBody);\n\ntests[\"was json body\"] = \n json.headers[\"Content-Type\"] === \"application/json\";\n\n\nconst validation = tv4.validateMultiple(json, schema);\nif (validation.valid) {\n   tests[\"Valid Json Schema\"] = true;    \n} else {\n   let message = \"\"; \n   for (let key in validation.errors) { \n       let e = validation.errors[key]; \n       message += `${e.dataPath} => ${e.message} || `;\n   }\n   throw Error(message);\n}\n\n\ntests[\"Has expected args\"] = json.json.size === \"small\";\n\n"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/delete",
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"comments\": \"cheese was delicious\", \n    \"custemail\": \"john@example.com\", \n    \"custname\": \"John Doe\", \n    \"custtel\": \"0170\", \n    \"delivery\": \"13:45\", \n    \"size\": \"small\", \n    \"topping\": \"cheese\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/cookies/delete",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\n\nconst schema ={\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"type\":\"object\",\"properties\":{\"args\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"data\":{\"type\":\"string\"},\"files\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"json\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"cookies\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"form\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"headers\":{\"type\":\"object\",\"properties\":{},\"required\":[]},\"origin\":{\"type\":\"string\"},\"url\":{\"type\":\"string\"}},\"required\":[]};\nschema.required = [\"cookies\"];\n\n\n\n\ntests[\"Status code is 200\"] = responseCode.code === 200;\nconst json = JSON.parse(responseBody);\n\nconst validation = tv4.validateMultiple(json, schema);\nif (validation.valid) {\n   tests[\"Valid Json Schema\"] = true;    \n} else {\n   let message = \"\"; \n   for (let key in validation.errors) { \n       let e = validation.errors[key]; \n       message += `${e.dataPath} => ${e.message} || `;\n   }\n   throw Error(message);\n}\n\n\ntests[\"cookie deleted\"] = !json.cookies.track;\ntests[\"cookie deleted\"] = !json.cookies.expire;"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/cookies/delete?expire&track",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"comments\": \"cheese was delicious\", \n    \"custemail\": \"john@example.com\", \n    \"custname\": \"John Doe\", \n    \"custtel\": \"0170\", \n    \"delivery\": \"13:45\", \n    \"size\": \"small\", \n    \"topping\": \"cheese\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/cookies/set",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\n\nconst schema ={\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"type\":\"object\",\"properties\":{\"args\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"data\":{\"type\":\"string\"},\"files\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"json\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"cookies\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"form\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"headers\":{\"type\":\"object\",\"properties\":{},\"required\":[]},\"origin\":{\"type\":\"string\"},\"url\":{\"type\":\"string\"}},\"required\":[]};\nschema.required = [\"cookies\"];\nschema.properties.cookies.requied = [\"expire\", \"track\"];\n\n\n\ntests[\"Status code is 200\"] = responseCode.code === 200;\nconst json = JSON.parse(responseBody);\n\nconst validation = tv4.validateMultiple(json, schema);\nif (validation.valid) {\n   tests[\"Valid Json Schema\"] = true;    \n} else {\n   let message = \"\"; \n   for (let key in validation.errors) { \n       let e = validation.errors[key]; \n       message += `${e.dataPath} => ${e.message} || `;\n   }\n   throw Error(message);\n}\n\n\ntests[\"tack: no\"] = (json.cookies.track === \"no\");"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/cookies/set?track=no&expire=immediatly",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"comments\": \"cheese was delicious\", \n    \"custemail\": \"john@example.com\", \n    \"custname\": \"John Doe\", \n    \"custtel\": \"0170\", \n    \"delivery\": \"13:45\", \n    \"size\": \"small\", \n    \"topping\": \"cheese\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/cookies",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\nconst schema ={\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"type\":\"object\",\"properties\":{\"args\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"data\":{\"type\":\"string\"},\"files\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"json\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"cookies\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"form\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":{\"type\":\"string\"},\"required\":[]},\"headers\":{\"type\":\"object\",\"properties\":{},\"required\":[]},\"origin\":{\"type\":\"string\"},\"url\":{\"type\":\"string\"}},\"required\":[]};\nschema.required = [\"cookies\"];\nschema.properties.cookies.requied = [\"expire\", \"track\"];\n\n\n\n\ntests[\"Status code is 200\"] = responseCode.code === 200;\nconst json = JSON.parse(responseBody);\n\nconst validation = tv4.validateMultiple(json, schema);\nif (validation.valid) {\n   tests[\"Valid Json Schema\"] = true;    \n} else {\n   let message = \"\"; \n   for (let key in validation.errors) { \n       let e = validation.errors[key]; \n       message += `${e.dataPath} => ${e.message} || `;\n   }\n   throw Error(message);\n}\n\n\ntests[\"tack: no\"] = (json.cookies.track === \"no\");"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/cookies",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"comments\": \"cheese was delicious\", \n    \"custemail\": \"john@example.com\", \n    \"custname\": \"John Doe\", \n    \"custtel\": \"0170\", \n    \"delivery\": \"13:45\", \n    \"size\": \"small\", \n    \"topping\": \"cheese\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/bytes/:n",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "\"use strict\";\n\ntests[\"Status code is 200\"] = responseCode.code === 200;\ntests[\"Content-Length 1024\"] = postman.getResponseHeader(\"Content-Length\") == 1024;\n\n"
+					}
+				}
+			],
+			"request": {
+				"url": "{{httpbin}}/bytes/1024",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/octet-stream",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": []
+				},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}
