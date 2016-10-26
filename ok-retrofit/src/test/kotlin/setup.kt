@@ -7,7 +7,9 @@ import com.github.fge.jsonschema.main.JsonSchemaFactory
 import com.squareup.moshi.FromJson
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.ToJson
+import io.kotlintest.matchers.CollectionMatchers
 import io.kotlintest.matchers.HaveWrapper
+import io.kotlintest.matchers.Matcher
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.intellij.lang.annotations.Language
@@ -80,6 +82,18 @@ infix fun HaveWrapper<out JsonNode>.schema(@Language("File") schemaPath: String)
     if (!report.isSuccess)
         throw AssertionError("Json does match the expected json schema\n$value\n${report.toString()}")
 }
+
+fun <T>  CollectionMatchers.containAll(vararg t: T): Matcher<Collection<T>> = object : Matcher<Collection<T>> {
+    val collection = t.map { it }
+    override fun test(value: Collection<T>) {
+        val notfound = collection - value
+        if (notfound.isNotEmpty())
+            throw AssertionError("Those elements were not found in the list $notfound")
+    }
+
+}
+
+
 
 object JsonUtils {
 
