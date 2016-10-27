@@ -1,4 +1,5 @@
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.github.fge.jackson.JsonLoader
 import com.github.fge.jsonschema.core.load.Dereferencing
 import com.github.fge.jsonschema.core.load.configuration.LoadingConfiguration
@@ -119,5 +120,15 @@ object JsonUtils {
         }
         val schema = JsonLoader.fromFile(file)
         return factory.getJsonSchema(schema)
+    }
+}
+
+fun ObjectNode.keys() : List<String> = this.fieldNames().asSequence().toList()
+
+fun ObjectNode.childObject(name: String): ObjectNode {
+    if (get(name) is ObjectNode) {
+        return get(name) as ObjectNode
+    } else {
+        throw AssertionError("No child object with name [$name] in \n   $this")
     }
 }

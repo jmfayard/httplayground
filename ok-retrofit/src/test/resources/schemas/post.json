@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "args": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "data": {
+      "type": "string"
+    },
+    "files": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "form": {
+      "type": "object",
+      "properties": {}
+    },
+    "headers": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "json": {
+      "type": ["object", "null"]
+    },
+    "origin": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "args",
+    "data",
+    "files",
+    "form",
+    "headers",
+    "json",
+    "origin",
+    "url"
+  ]
+}

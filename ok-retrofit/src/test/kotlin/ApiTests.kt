@@ -1,4 +1,5 @@
-import H.*
+import H.CacheControl
+import H.ETag
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.kotlintest.matchers.have
 import okhttp3.logging.HttpLoggingInterceptor
@@ -8,6 +9,19 @@ import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory
 import retrofit2.converter.jackson.JacksonConverterFactory
 import retrofit2.http.*
 import rx.Single
+
+
+val URL = "https://httpbin.org/"
+
+val retrofit = buildRetrofit {
+    baseUrl(URL)
+    addConverterFactory(JacksonConverterFactory.create())
+    addCallAdapterFactory(RxJavaCallAdapterFactory.create())
+    buildOk {
+        val logger = HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.HEADERS)
+        addNetworkInterceptor(logger)
+    }
+}
 
 /***
  * Retrofit interface for http://httpbin.org/
@@ -19,7 +33,6 @@ import rx.Single
  * This exists to cover all kinds of HTTP scenarios. Additional endpoints are being considered.
  * All endpoint responses are JSON-encoded.
  */
-private val URL = "https://httpbin.org/"
 interface ApiService {
 
     /**   Returns Origin IP   */
@@ -37,12 +50,12 @@ interface ApiService {
     /**  Returns GET data.   */
     @GET("/get")
     fun getParams(@Query("id") id: String,
-                  @Query("gender")   gender: String)
+                  @Query("gender") gender: String)
             : Single<Response<ObjectNode>>
 
     /** Returns given HTTP Status code. **/
     @GET("/status/{code}")
-    fun status(@Path("code") code: Int) : Call<String>
+    fun status(@Path("code") code: Int): Call<String>
 
     /** Returns headers dict  **/
     @GET("/headers")
@@ -61,55 +74,69 @@ interface ApiService {
             @Query("ETag") etag: String)
             : Call<ObjectNode>
 
+    /** Returns POST data. || url-encoded ***/
+    @POST("/post")
+    @FormUrlEncoded
+    fun postUrlEncoded(@FieldMap postData: Map<String, String>): Single<Response<ObjectNode>>
+
+    /** Returns POST data. || JSON body ***/
+    @POST("/post")
+    fun postJson(@Body postData: Map<String, String>): Single<Response<ObjectNode>>
 
 
+    /** Returns POST data. || Multipart form-data ***/
+    @POST("/post")
+    @Multipart
+    fun postFormData(@Part("topping") topping: String,
+                     @Part("size") size: String,
+                     @Part("comments") comments: String,
+                     @Part("delivery") delivery: String)
+            : Single<Response<ObjectNode>>
+
+    /** Returns PUT data || url-encoded ***/
+    @PUT("/put")
+    @FormUrlEncoded
+    fun putUrlEncoded(@FieldMap postData: Map<String, String>): Single<Response<ObjectNode>>
+
+    /** Returns PUT data || JSON body ***/
+    @PUT("/put")
+    fun putJson(@Body putData: Map<String, String>): Single<Response<ObjectNode>>
 
 
-
-}
-
-private val retrofit = buildRetrofit {
-    baseUrl(URL)
-    addConverterFactory(JacksonConverterFactory.create())
-    addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-    buildOk {
-        val logger = HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.HEADERS)
-        addNetworkInterceptor(logger)
-    }
 }
 
 
 class ApiTests : RxSpec() { init {
 
 
-    val service = retrofit.create(ApiService::class.java)
+    val httpbin = retrofit.create(ApiService::class.java)
 
     feature("GET /user-agent") {
-        retrofitScenario("verify schema", service.userAgent()) {
+        retrofitScenario("verify schema", httpbin.userAgent()) {
             this should have schema "schemas/user-agent.json"
         }
     }
 
     feature("GET /ip") {
-        retrofitScenario("verify schema", service.ip()) {
+        retrofitScenario("verify schema", httpbin.ip()) {
             this should have schema "schemas/ip.json"
         }
     }
 
     feature("GET /get") {
         val args = hashMapOf("id" to "1", "gender" to "MALE")
-        retrofitScenario("verify schema", service.getMap(args)) {
+        retrofitScenario("verify schema", httpbin.getMap(args)) {
             this should have schema "schemas/get.json"
         }
 
-        retrofitScenario("verify schema", service.getParams("1", "MALE")) {
+        retrofitScenario("verify schema", httpbin.getParams("1", "MALE")) {
             this should have schema "schemas/get.json"
         }
     }
 
     feature("GET /status") {
         scenario("status:418") {
-            val call = service.status(418)
+            val call = httpbin.status(418)
             val response: Response<String> = call.execute()
             response.code() shouldBe 418
         }
@@ -118,19 +145,16 @@ class ApiTests : RxSpec() { init {
 
     feature("GET /headers") {
         val headers = hashMapOf("Content-Type" to "application/json", "X-Requested-With" to "okhttp3")
+        val keys = headers.keys.toTypedArray()
 
-        retrofitScenario("headersMap", service.headersMap(headers)) {
+        retrofitScenario("headersMap", httpbin.headersMap(headers)) {
             this should have schema "schemas/headers.json"
-            val headersJson = get("headers") as ObjectNode
-            val names = headersJson.fieldNames().asSequence().toList()
-            names should containAll("Content-Type", "X-Requested-With")
+            childObject("headers").keys() should containAll(*keys)
         }
 
-        retrofitScenario("headersParam", service.headersParam("application/json", "okhttp3")) {
+        retrofitScenario("headersParam", httpbin.headersParam("application/json", "okhttp3")) {
             this should have schema "schemas/headers.json"
-            val headersJson = get("headers") as ObjectNode
-            val names = headersJson.fieldNames().asSequence().toList()
-            names should containAll("Content-Type", "X-Requested-With")
+            childObject("headers").keys() should containAll(*keys)
         }
     }
 
@@ -138,7 +162,7 @@ class ApiTests : RxSpec() { init {
     feature("GET /response-headers?key=val") {
 
         scenario("Receiving ${ETag} and ${CacheControl}") {
-            val call = service.responseHeaders(etag = "42", cache = "public")
+            val call = httpbin.responseHeaders(etag = "42", cache = "public")
             val response: Response<ObjectNode> = call.execute()
             response.isSuccessful shouldBe true
             response.header(ETag) shouldBe "42"
@@ -147,8 +171,51 @@ class ApiTests : RxSpec() { init {
 
     }
 
+    feature("POST /post") {
+
+        val postData = hashMapOf(
+                "topping" to "cheese",
+                "size" to "small",
+                "delivery" to "13h45",
+                "comments" to "dish was great"
+        )
+        val keys = postData.keys.toTypedArray()
+
+        retrofitScenario("/post x-www-form-urlencoded", httpbin.postUrlEncoded(postData)) {
+            this should have schema "schemas/post.json"
+            childObject("form").keys() should containAll(*keys)
+        }
+
+        retrofitScenario("/post multipart form-data", httpbin.postFormData("cheese", "small", "comments", "13h45")) {
+            this should have schema "schemas/post.json"
+            childObject("form").keys() should containAll(*keys)
+        }
+
+        retrofitScenario("/post JSON body", httpbin.postJson(postData)) {
+            this should have schema "schemas/post.json"
+            childObject("json").keys() should containAll(*keys)
+        }
+    }
 
 
+
+    feature("PUT /put") {
+
+        val putData = hashMapOf(
+                "topping" to "cheese",
+                "size" to "small",
+                "delivery" to "13h45",
+                "comments" to "dish was great"
+        )
+
+        retrofitScenario("/put x-www-form-urlencoded", httpbin.putUrlEncoded(putData)) {
+            this should have schema "schemas/post.json"
+        }
+
+        retrofitScenario("/put JSON body", httpbin.putJson(putData)) {
+            this should have schema "schemas/post.json"
+        }
+    }
 
 
 }
