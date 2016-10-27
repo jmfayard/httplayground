@@ -13,6 +13,7 @@ import io.kotlintest.matchers.Matcher
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.intellij.lang.annotations.Language
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory
 import retrofit2.converter.jackson.JacksonConverterFactory
@@ -21,6 +22,41 @@ import java.io.File
 import java.util.*
 import java.util.concurrent.TimeUnit
 
+/** https://en.wikipedia.org/wiki/List_of_HTTP_header_fields **/
+enum class H(val v: kotlin.String) {
+    CacheControl("Cache-Control"),
+    ETag("ETag"),
+    ContentLength("Content-Length"),
+    Server("Content-Length"),
+    ContentType("Content-Type"),
+    Accept("Accept"),
+    Authorization("Authorization"),
+    Connection("Connection"),
+    Cookie("Cookie"),
+    UserAgent("User-Agent"),
+    Pragma("Pragma"),
+    Origin("Origin"),
+    IfNoneMatch("If-None-Match"),
+    IfModifiedSince("If-Modified-Since"),
+    IfMatch("If-Match"),
+    Host("Host"),
+    XRequestedWith("X-Requested-With"),
+
+}
+
+fun <T> Response<T>.header(header: H) : String = headers().get(header.v)
+
+fun buildRetrofit(init: Retrofit.Builder.() -> Unit) : Retrofit {
+    val builder = Retrofit.Builder()
+    builder.init()
+    return builder.build()
+}
+
+fun buildOk(init: OkHttpClient.Builder.() -> Unit) : OkHttpClient {
+    val builder = OkHttpClient.Builder()
+    builder.init()
+    return builder.build()
+}
 
 val moshi = Moshi.Builder()
         .add(DateAdapter())
@@ -37,35 +73,8 @@ internal class DateAdapter {
     }
 }
 
-val ok by lazy {
-    OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(15, TimeUnit.SECONDS)
-            .writeTimeout(15, TimeUnit.SECONDS)
-            .addNetworkInterceptor(
-                    HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.HEADERS)
-            )
-            .build()
-}
 
 
-fun createRetrofitApiService(url: String): ApiService {
-    val baseUrl = if (url.endsWith("/")) {
-        url
-    } else {
-        url + "/"
-    }
-
-    val retrofit = Retrofit.Builder()
-            .baseUrl(baseUrl)
-            .client(ok)
-            .addConverterFactory(JacksonConverterFactory.create())
-//            .addConverterFactory(MoshiConverterFactory.create(moshi))
-            .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-            .build()
-
-    return retrofit.create(ApiService::class.java)
-}
 
 
 infix fun HaveWrapper<out JsonNode>.schema(schema: JsonNode): Unit {

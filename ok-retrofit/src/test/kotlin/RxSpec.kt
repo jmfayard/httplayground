@@ -2,6 +2,7 @@ import io.kotlintest.specs.FeatureSpec
 import retrofit2.Response
 import retrofit2.http.HTTP
 import rx.Single
+import kotlin.test.assertTrue
 
 
 abstract class RxSpec : FeatureSpec() {
@@ -20,37 +21,23 @@ abstract class RxSpec : FeatureSpec() {
                 }
             }
 
-    protected fun <T> okFeature(name: String, response: Response<T>, operation: T.() -> Unit) =
-            feature(name) {
-                scenario("Call succeed") {
-                    response.isSuccessful shouldBe true
-                }
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    body.operation()
-                }
+    protected fun <T> retrofitScenario(name: String, call: Single<Response<T>>, operation: T.() -> Unit) {
+        scenario(name) {
+            val response = call.toBlocking().value()
+            if (response.isSuccessful) {
+                val body = response.body()
+                body.operation()
+            } else {
+                "HTTP ${response.message()}" shouldBe "HTTP 200"
             }
 
-//    protected fun <T> retrofitScenario(name: String, call: Single<Response<ApiResponse<T>>>, operation: T.() -> Unit) {
-//        val response = call.toBlocking().value()
-//        if (response.isSuccessful) {
-//            val body = response.body()
-//            if (body.isSuccess) {
-//                scenario(name) {
-//                    assertTrue(body.data != null, "Call returned a null body")
-//                    body.data.operation()
-//                }
-//            } else {
-//                scenario("Call $name failed with an api error") {
-//                    "Api code ${body.apiCode()}" shouldBe "0"
-//                }
-//            }
-//        } else {
-//            scenario("Call $name failed with a server error") {
-//                "HTTP ${response.message()}" shouldBe "HTTP 200"
-//            }
-//        }
-//    }
+        }
+
+    }
+}
+
+
+
 //
 //    protected fun <T> retrofitScenarioShouldFail(name: String, call: Single<Response<ApiResponse<T>>>) =
 //        scenario(name) {
@@ -113,6 +100,3 @@ abstract class RxSpec : FeatureSpec() {
 //            "ERROR, cannot download file [$url]"
 //        }
 //    }
-
-
-}

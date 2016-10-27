@@ -4,6 +4,7 @@
 
 - [httpplayground](#httpplayground)
   - [httpbin(1): HTTP Request & Response Service](#httpbin1-http-request-&-response-service)
+  - [Ok-Retrofit](#ok-retrofit)
   - [Postman & newman](#postman-&-newman)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -21,6 +22,19 @@ Testing an HTTP Library can become difficult sometimes. RequestBin is fantastic 
 The requests can be made directly against the http://httpbin.org/ endpoint
 
 Or the python/flask server can be run locally: [`$ start_localserver.sh`](start_localserver.sh)
+
+Ok-Retrofit 
+--------
+
+
+In [`ok-retrofit/src/test/kotlin/ApiTests.kt`](ok-retrofit/src/test/kotlin/ApiTests.kt) we have calls to httpbin   
+
+- http requests are built with http://square.github.io/okhttp/
+- ... then retrofited to https://square.github.io/retrofit/
+- ... then packed in a https://github.com/kotlintest/kotlintest test suite
+- ... which can be run in a junit runner
+
+![](asset/okretrofit-testsuite.png)
 
 
 Postman & newman
