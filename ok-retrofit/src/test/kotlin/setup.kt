@@ -11,7 +11,9 @@ import com.squareup.moshi.ToJson
 import io.kotlintest.matchers.CollectionMatchers
 import io.kotlintest.matchers.HaveWrapper
 import io.kotlintest.matchers.Matcher
+import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.logging.HttpLoggingInterceptor
 import org.intellij.lang.annotations.Language
 import retrofit2.Response
@@ -57,6 +59,18 @@ fun buildOk(init: OkHttpClient.Builder.() -> Unit) : OkHttpClient {
     val builder = OkHttpClient.Builder()
     builder.init()
     return builder.build()
+}
+
+fun buildRequest(init: Request.Builder.() -> Unit): Request {
+    val builder = Request.Builder()
+    builder.init()
+    return builder.build()
+}
+
+fun Request.Builder.buildUrl(init: HttpUrl.Builder.() -> Unit): Unit {
+    val builder = HttpUrl.Builder()
+    builder.init()
+    url(builder.build())
 }
 
 val moshi = Moshi.Builder()
