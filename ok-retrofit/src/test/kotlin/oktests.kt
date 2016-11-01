@@ -2,6 +2,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.squareup.moshi.JsonReader
 import io.kotlintest.matchers.be
 import io.kotlintest.specs.ShouldSpec
+import io.kotlintest.specs.StringSpec
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -25,6 +26,27 @@ object OkRequests {
             }
         }
     }
+
+    fun statusCode(code : Int) : Request = buildRequest {
+        buildUrl {
+            scheme("https")
+            host(HOST)
+            addPathSegment("status")
+            addPathSegment(code.toString())
+        }
+    }
+
+
+
+    fun redirect(n : Int) : Request = buildRequest {
+        buildUrl {
+            scheme("https")
+            host(HOST)
+            addPathSegment("redirect")
+            addPathSegment(n.toString())
+        }
+    }
+
 
 }
 
@@ -65,6 +87,37 @@ class OKTests : ShouldSpec() { init {
             val map = Parser.read(response.body().source())
             map.childObject("args").keys should beEmpty()
         }
+    }
+
+    "GET /status/:code OK" {
+        val codes = (200..210) + (301..303) + 307
+        forAll(codes) { code ->
+            OkRequests.statusCode(code) mustHave { response: Response ->
+                response.isSuccessful
+            }
+        }
+    }
+
+    "GET /status/:code KO" {
+        val badCodes = (400..406) + (500..510) + listOf(300,304,305,306,308,309,310,410)
+        for (code in badCodes) {
+            should("fail for $code") {
+                val request = OkRequests.statusCode(code)
+                val response = client.newCall(request).execute()
+                response.isSuccessful shouldBe false
+            }
+        }
+    }
+
+
+    "GET /redirect/:n" {
+        val redirects = (1..8)
+        for (redirect in redirects) {
+            OkRequests.redirect(redirect) mustHave { response: Response ->
+                response.isSuccessful
+            }
+        }
+
     }
 
 
