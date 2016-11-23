@@ -1,102 +1,54 @@
 import io.kotlintest.specs.FeatureSpec
-import retrofit2.Response
-import retrofit2.http.HTTP
+import okhttp3.ResponseBody
+import rx.Observable
 import rx.Single
-import kotlin.test.assertTrue
 
 
-abstract class RxSpec : FeatureSpec() {
-
-    protected fun <T> retrofitFeature(name: String, call: Single<Response<T>>, operation: T.() -> Unit) =
-            feature(name) {
-                var response: Response<T> = call.toBlocking().value()
-                var data: T? = null
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    body.operation()
-                } else {
-                    scenario("Call $name failed with a server error") {
-                        "HTTP ${response.message()}" shouldBe "HTTP 200"
-                    }
-                }
+fun <T> FeatureSpec.rxScenario(name: String, source: Observable<T>, operation: (next: T) -> Unit) {
+    val blocking = source.toBlocking().iterator
+    var i = 0
+    while (true) {
+        try {
+            if (blocking.hasNext() == false) {
+                return
             }
-
-    protected fun <T> retrofitScenario(name: String, call: Single<Response<T>>, operation: T.() -> Unit) {
-        scenario(name) {
-            val response = call.toBlocking().value()
-            if (response.isSuccessful) {
-                val body = response.body()
-                body.operation()
-            } else {
-                "HTTP ${response.message()}" shouldBe "HTTP 200"
+        } catch (e: Throwable) {
+            scenario("$name Crash at step #$i") {
+                throw AssertionError(e.message)
             }
+            return
+        }
+        val step = blocking.next()
+        i++
+        scenario("$name #$i") {
+            operation(step!!)
+        }
+    }
+}
 
+fun <T> FeatureSpec.rxScenario(name: String, source: Single<T>, operation: (next: T) -> Unit) =
+        rxScenario(name, source.toObservable(), operation)
+
+fun <T : Any> checkSuccessfull(response: retrofit2.Response<T>): T =
+        if (response.isSuccessful) {
+            response.body()
+        } else {
+            throw AssertionError(""""Rertrofit failed with HTTP ${response.code()} ${response.message()}
+${truncate(response.errorBody()?.string())}""")
         }
 
-    }
+fun checkSuccessfull(response: okhttp3.Response): ResponseBody =
+        if (response.isSuccessful) {
+            response.body()
+        } else {
+            throw AssertionError(""""OkHttp failed with HTTP ${response.code()} ${response.message()}""")
+        }
+
+private fun truncate(string: String?): String = when {
+    string == null -> ""
+    string.length < 200 -> string
+    else -> string.substring(0, 197) + "..."
 }
 
 
 
-//
-//    protected fun <T> retrofitScenarioShouldFail(name: String, call: Single<Response<ApiResponse<T>>>) =
-//        scenario(name) {
-//            val response = call.toBlocking().value()
-//            assert(response.isSuccessful) {
-//                "[$name] Expected an api error, but got HTTP ${response.message()}"
-//            }
-//            val data = response.body()
-//            assert(data.isError) {
-//                "[$name] Expected an api error, but got HTTP OK"
-//            }
-//            println(
-//                "[$name] Got api error as expected (code=${data.apiCode()})"
-//            )
-//        }
-
-//
-//    fun <T> assertSuccess(response: Response<ApiResponse<T>>) : T {
-//        if (response.isSuccessful) {
-//            val data = response.body()
-//            if (data.isSuccess) {
-//                return  data.data
-//            } else {
-//                data.apiCode() shouldBe 0
-//                return data.data
-//            }
-//        } else {
-//            println("API error")
-//            throw  AssertionError("API Error")
-//        }
-//    }
-
-
-//
-//    fun logSubscriber(name: String): Action1<Any> {
-//        println("[$name] => started")
-//        return object : Action1<Any> {
-//            override fun call(t: Any?) {
-//                println("[$name] => got $t")
-//            }
-//
-//        }
-//    }
-//
-//    fun assertCanDownloadFile(url: String?) {
-//        if (url==null) {
-//            return
-//        }
-//        val url2 = if (url.contains("localhost")) {
-//            url.replace("https", "http")
-//        } else {
-//            url
-//        }
-//        val request = Request.Builder()
-//            .url(url2)
-//            .build()
-//
-//        val response = ok.newCall(request).execute()
-//        assert(response.isSuccessful) {
-//            "ERROR, cannot download file [$url]"
-//        }
-//    }
