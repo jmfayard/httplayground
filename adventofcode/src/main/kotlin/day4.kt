@@ -82,7 +82,7 @@ fun Room.realChecksum(): String {
         occurences[c] = 1 + (occurences[c] ?: 0)
     }
     val indices = ('a'..'z').sortedByDescending { c -> occurences[c] }.take(5)
-    return indices.joinToString(separator = "")
+    return indices.asString()
 }
 
 
