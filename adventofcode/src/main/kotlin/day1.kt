@@ -74,9 +74,11 @@ class Day1 : FreeSpec() { init {
     R3, L2, L2, R4, L1, R2, R3, R4, L2, R4, L2, L5, L1, R5, R2, R2, L1, R4, R1, L5, L3, R4, R3, R1, L1, L5, L4, L2, R5, L3, L4, R3, R1, L3, R1, L3, R3, L4, R2, R5, L190, R2, L3, R47, R4, L3, R78, L1, R3, R190, R4, L3, R4, R2, R5, R3, R4, R3, L1, L4, R3, L4, R1, L4, L5, R3, L3, L4, R1, R2, L4, L3, R3, R3, L2, L5, R1, L4, L1, R5, L5, R1, R5, L4, R2, L2, R1, L5, L4, R4, R4, R3, R2, R3, L1, R4, R5, L2, L5, L4, L1, R4, L4, R4, L4, R1, R5, L1, R1, L5, R5, R1, R1, L3, L1, R4, L1, L4, L4, L3, R1, R4, R1, R1, R2, L5, L2, R4, L1, R3, L5, L2, R5, L4, R5, L5, R3, R4, L3, L3, L2, R2, L5, L5, R3, R4, R3, R4, R3, R1
 """
 
-    "Solution : 262" {
+
+    "Solutions : 262 and 277" {
         val input = parsePuzzle(puzzle)
         val states = mutableListOf(State.initial())
+        var found = false
         input.forEach { instruction ->
             val current = states.last()
             states += current.next(instruction)
@@ -85,6 +87,25 @@ class Day1 : FreeSpec() { init {
         val last = states.last()
         println("Last state $last is at a distance of ${last.distance()}")
         last.distance() shouldBe 262
+
+        val travelled = mutableMapOf<Pair<Int, Int>, List<State>>()
+
+        states
+            .filter { state -> state.step.mod(2) == 0}
+            .forEach { state ->
+                val pair = state.x to state.y
+                travelled[pair] = travelled.getOrElse(pair) { emptyList() } + state
+            }
+
+        val visitedTwice = travelled
+            .filterValues { it.size > 1 }
+            .flatMap { it.value }
+            .sortedBy { it.step }
+
+        visitedTwice.forEach { it.debug("twice") }
+        val visited = visitedTwice.first()
+        "$visited (distance ${visited.distance()}) was the first visited twice".debug("Part2")
+        visited.distance() shouldBe 277
     }
 }
 }

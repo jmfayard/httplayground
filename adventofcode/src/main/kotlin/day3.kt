@@ -48,8 +48,7 @@ class Day3 : StringSpec() { init {
     }
 
     val expected = 1050
-    val file = File("src/main/kotlin/day3.txt")
-    require(file.canRead()) { "Cannot read ${file.absolutePath}" }
+    val file = resourceFile("day3.txt")
 
     "Solution: $expected " {
 
