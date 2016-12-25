@@ -62,20 +62,21 @@ You notice that the screen is only capable of displaying capital letters; in the
 After you swipe your card, what code is the screen trying to display?
 
 
-
-
  */
-sealed class Lcd {
-    class Rect(val cols: Int, val rows: Int): Lcd() {
+
+
+
+sealed class ScreenAction {
+    class Rect(val cols: Int, val rows: Int): ScreenAction() {
         override fun toString(): String = "rect ${cols}x${rows}"
     }
-    class RotateRow(val row: Int, val by: Int) : Lcd(){
+    class RotateRow(val row: Int, val by: Int) : ScreenAction(){
         override fun toString(): String = "rotate row y=$row by $by"
     }
-    class RotateCol(val col: Int, val by: Int) : Lcd(){
+    class RotateCol(val col: Int, val by: Int) : ScreenAction(){
         override fun toString(): String = "rotate column x=$col by $by"
     }
-    class Invalid(val line: String) : Lcd() {
+    class Invalid(val line: String) : ScreenAction() {
         override fun toString(): String = "Invalid($line)"
     }
 }
@@ -90,19 +91,21 @@ class Day8 : StringSpec() {init {
         }
     }
 
-    "Screens" {
+    "List rotations" {
         val five = listOf(1, 2, 3, 4, 5)
         five.rotate(7) shouldBe listOf(4, 5, 1, 2, 3)
         five.rotate(5) shouldBe five
+    }
 
+    "Screens" {
 
-        val matrix = MutableMatrix(cols = 7, rows = 3) { col, row -> false }.print()
-        matrix.mutate("rect 3x2".asLcd())
-        matrix.mutate("rotate column x=1 by 1".asLcd())
-        matrix.mutate("rotate row y=0 by 4".asLcd())
-        matrix.mutate("rotate column x=1 by 1".asLcd())
+        val screen = Screen(cols = 7, rows = 3)
+        screen.mutate("rect 3x2".asLcd())
+        screen.mutate("rotate column x=1 by 1".asLcd())
+        screen.mutate("rotate row y=0 by 4".asLcd())
+        screen.mutate("rotate column x=1 by 1".asLcd())
         var lights = 0
-        matrix.traverseRows { col, row, b ->  if (b) lights++ }
+        screen.traverseRows { col, row, b ->  if (b) lights++ }
         lights shouldBe 6
     }
 
@@ -111,55 +114,76 @@ class Day8 : StringSpec() {init {
         println()
         println("==== PUZZLE ====")
         val instructions = resourceFile("day8.txt").readLines().map(String::asLcd)
-        val matrix = MutableMatrix(cols = 50, rows = 6) { col, row -> false }.print()
+        val screen = Screen(cols = 50, rows = 6)
         instructions.forEach { instruction ->
-            matrix.mutate(instruction)
+            screen.mutate(instruction)
         }
         var lights = 0
-        matrix.traverseRows { col, row, b ->  if (b) lights++ }
+        screen.traverseRows { col, row, b ->  if (b) lights++ }
         lights shouldBe solution
     }
 
 }}
 
-private fun MutableMatrix<Boolean>.mutate(lcd: Lcd) : MutableMatrix<Boolean> {
-    when (lcd) {
-        is Lcd.Rect -> this.fill { col: Int, row: Int, value: Boolean ->
-            if (col < lcd.cols && row < lcd.rows) {
-                true
-            } else {
-                value
-            }
-        }
-        is Lcd.RotateRow -> {
-            val list = mutableListOf<Boolean>()
-            traverseRows { col, row, b -> if (row == lcd.row) list+=b }
-            val rotated : List<Boolean> = list.rotate(lcd.by)
-            fill { col, row, b ->
-                if (row == lcd.row) {
-                    rotated[col]
-                } else {
-                    b
-                }
-            }
-        }
-        is Lcd.RotateCol -> {
-            val list = mutableListOf<Boolean>()
-            traverseRows { col, row, b -> if (col == lcd.col) list+=b }
-            val rotated : List<Boolean> = list.rotate(lcd.by)
-            fill { col, row, b ->
-                if (col == lcd.col) {
-                    rotated[row]
-                } else {
-                    b
-                }
-            }
 
+class Screen(cols: Int, rows: Int,
+             val matrix: MutableMatrix<Boolean> = MutableMatrix(cols = cols, rows = rows) { col, row -> false }
+) : MutableMatrix<Boolean> by matrix {
+
+    fun mutate(lcd: ScreenAction) : MutableMatrix<Boolean> {
+        when (lcd) {
+            is ScreenAction.Rect -> this.fill { col: Int, row: Int, value: Boolean ->
+                if (col < lcd.cols && row < lcd.rows) {
+                    true
+                } else {
+                    value
+                }
+            }
+            is ScreenAction.RotateRow -> {
+                val list = mutableListOf<Boolean>()
+                traverseRows { col, row, b -> if (row == lcd.row) list+=b }
+                val rotated : List<Boolean> = list.rotate(lcd.by)
+                fill { col, row, b ->
+                    if (row == lcd.row) {
+                        rotated[col]
+                    } else {
+                        b
+                    }
+                }
+            }
+            is ScreenAction.RotateCol -> {
+                val list = mutableListOf<Boolean>()
+                traverseRows { col, row, b -> if (col == lcd.col) list+=b }
+                val rotated : List<Boolean> = list.rotate(lcd.by)
+                fill { col, row, b ->
+                    if (col == lcd.col) {
+                        rotated[row]
+                    } else {
+                        b
+                    }
+                }
+
+            }
+            is ScreenAction.Invalid -> fail(lcd.toString())
         }
-        is Lcd.Invalid -> fail(lcd.toString())
+        println(lcd)
+        return this.print()
     }
-    println(lcd)
-    return this.print()
+
+
+    fun print() : Screen {
+        println((0..(cols-1)).map { it.mod(10) }.joinToString(separator = "", prefix = "  "))
+        traverseRows { col, row, b ->
+            if (col == 0) print("$row")
+            if (col.mod(5) == 0) print(" ")
+            print(if (b) '#' else '.')
+            if (col == cols -1) println()
+        }
+        println()
+        return this
+    }
+
+
 }
 
 private fun <E> List<E>.rotate(by: Int): List<E> {
@@ -168,33 +192,23 @@ private fun <E> List<E>.rotate(by: Int): List<E> {
     return subList(limit, size) + subList(0, limit)
 }
 
-public fun MutableMatrix<Boolean>.print() : MutableMatrix<Boolean> {
-    println((0..(cols-1)).map { it.mod(10) }.joinToString(separator = "", prefix = "  "))
-    traverseRows { col, row, b ->
-        if (col == 0) print("$row")
-        if (col.mod(5) == 0) print(" ")
-        print(if (b) '#' else '.')
-        if (col == cols -1) println()
-    }
-    println()
-    return this
-}
 
 
-private fun String.asLcd() : Lcd = parseLcd(this)
-fun parseLcd(line: String) : Lcd {
+
+private fun String.asLcd() : ScreenAction = parseLcd(this)
+fun parseLcd(line: String) : ScreenAction {
     val lex = line.split(' ', '=')
     if (lex.first() == "rect") {
         val list = lex.last().split('x')
-        return Lcd.Rect(cols = list[0].toInt(), rows = list[1].toInt())
+        return ScreenAction.Rect(cols = list[0].toInt(), rows = list[1].toInt())
     } else if (lex.first() == "rotate") {
         val (rowOrCol, by) = lex[3].toInt() to lex[5].toInt()
         return when (lex[1]) {
-            "row" ->  Lcd.RotateRow(rowOrCol, by)
-            "column" -> Lcd.RotateCol(rowOrCol, by)
-            else -> Lcd.Invalid(line)
+            "row" ->  ScreenAction.RotateRow(rowOrCol, by)
+            "column" -> ScreenAction.RotateCol(rowOrCol, by)
+            else -> ScreenAction.Invalid(line)
         }
     } else {
-        return Lcd.Invalid(line)
+        return ScreenAction.Invalid(line)
     }
 }
