@@ -16,7 +16,7 @@ The third floor contains a lithium generator.
 The fourth floor contains nothing relevant.
 **/
 
-public fun elems(vararg e: String): Elems = Elems(listOf(*e).sorted())
+public fun elems(vararg e: String): Elems = Elems(listOf(*e))
 
 class Day11 : StringSpec() { init {
 
@@ -45,73 +45,117 @@ class Day11 : StringSpec() { init {
         generator.copy(elevator = 1).downMoves() should haveSize(0)
         generator.copy(elevator = 4).upMoves() should haveSize(0)
         generator.downMoves() shouldBe listOf(elems("HM"))
+        Radioisotope(1, listOf(elems(), elems(), elems(), elems("HM", "LM", "HG", "LG"))).isSuccess() shouldBe true
+
 
     }
 
-    "Resolvers" {
-//        val initial = Radioisotope(1, listOf(
-//            elems("HM", "LM"),
-//            elems("HG"),
-//            elems("LG"),
-//            elems()
-//        ))
+    val solution = 31
+    "RadioisotopeResolution => $solution steps" {
+        val sampleElements = elems("HM", "LM", "HG", "LG")
+        val sampleSearch = Radioisotope(1, listOf(
+            elems("HM", "LM"),
+            elems("HG"),
+            elems("LG"),
+            elems()
+        ))
+        RadioisotopeResolution(sampleElements).searchUntilFind(sampleSearch) shouldBe 7
+
         /***
         The first floor contains a thulium generator, a thulium-compatible microchip, a plutonium generator, and a strontium generator.
         The second floor contains a plutonium-compatible microchip and a strontium-compatible microchip.
         The third floor contains a promethium generator, a promethium-compatible microchip, a ruthenium generator, and a ruthenium-compatible microchip.
         The fourth floor contains nothing relevant.
          */
-        val initial = Radioisotope(1, listOf(
+        val elements = elems("PrG", "PrM", "RG", "RM", "PlM", "SM", "TG", "TM", "PlG", "SG")
+        val search = Radioisotope(1, listOf(
             elems("TG", "TM", "PlG", "SG"),
             elems("PlM", "SM"),
             elems("PrG", "PrM", "RG", "RM"),
             elems()
         ))
-        println(initial.upMoves())
-        println("=== Initial Sate ===")
-        Radioisotope(1, listOf(elems(), elems(), elems(), elems("HM", "LM", "HG", "LG"))).isSuccess() shouldBe true
-        val resolution = RadioisotopeResolution()
-        resolution.tryAllMoves(initial)
-        resolution.printResult()
+        RadioisotopeResolution(elements).searchUntilFind(search) shouldBe solution
+
+
+        val elementsBis = elems("PrG", "PrM", "RG", "RM", "PlM", "SM", "TG", "TM", "PlG", "SG", "EG", "EM", "DG", "DM")
+        val searchBis = Radioisotope(1, listOf(
+            elems("TG", "TM", "PlG", "SG", "EG", "EM", "DG", "DM"),
+            elems("PlM", "SM"),
+            elems("PrG", "PrM", "RG", "RM"),
+            elems()
+        ))
+        RadioisotopeResolution(elementsBis).searchUntilFind(searchBis) shouldBe solution
+
     }
 
 }}
 
-class RadioisotopeResolution() {
+class RadioisotopeResolution(val elems: Elems) {
 
-    var result : Int = 35
+    var step = 0
 
-    val random = Random()
-    val analyzed = mutableListOf<Radioisotope>()
+    var lastStep : List<Radioisotope> = listOf(initialState())
+    val hashCodes = lastStep.map { it.hashCode() }.toMutableList()
 
+    private fun  initialState() = Radioisotope(4, listOf(elems(), elems(), elems(), elems))
 
-    fun tryAllMoves(current: Radioisotope, stack : Int = 0) {
-
-        if (current.isStable() == false) return
-
-        val nextStack = stack + 1
-        if (result != Int.MAX_VALUE  && nextStack >= result) {
-            return
+    fun oneMoreStep() {
+        val steps = lastStep.flatMap { isotope ->
+            val ups = isotope.upMoves().map { move -> isotope.moveElevator(up = true, with = move) }.filterNotNull()
+            val downs = isotope.downMoves().map { move -> isotope.moveElevator(up = false, with = move) }.filterNotNull()
+            ups + downs
         }
-        if (current in analyzed) {
-            return
+            .distinct()
+            .sortedBy { s -> s.hashCode() }
+
+        /** Search items not previously found
+         * optimizing by the fact that both lists are sorted
+         */
+        val nextSteps = mutableListOf<Radioisotope>()
+        var (i, j) = (0 to 0)
+        while (i < steps.size && j < hashCodes.size) {
+            val new = steps[i].hashCode()
+            val old = hashCodes[j].hashCode()
+            if (new < old) {
+                nextSteps += steps[i]
+                i++
+            } else if (new == old) {
+                i++
+                j++
+            } else {
+                j++
+            }
         }
-        if (current.isSuccess()) {
-            result = stack
-            println("Found result in $result steps")
-            return
+        for (k in i..steps.lastIndex) {
+            nextSteps += steps[k]
         }
-        analyzed += current
-        for (move in current.upMoves()) {
-            tryAllMoves(current.moveElevator(up = true, with = move)!!, nextStack)
-        }
-        for (move in current.downMoves()) {
-            tryAllMoves(current.moveElevator(up = false, with = move)!!, nextStack)
-        }
+        lastStep = nextSteps
+        hashCodes += nextSteps.map(Radioisotope::hashCode)
+        Collections.sort(hashCodes)
+
+
+        step++
+        println("Step = $step => ${lastStep.size} elements")
+        lastStep = steps
+        hashCodes += steps.map { it.hashCode() }
+
     }
 
-    fun printResult() {
-        println(result)
+
+    fun searchUntilFind(search: Radioisotope) : Int {
+        val hashSearch = search.hashCode()
+        var i = 0
+        while (lastStep.isNotEmpty()) {
+            oneMoreStep()
+            i++
+            if (hashSearch in hashCodes) {
+                println(search)
+                println("... was found in $i steps")
+                return i
+            }
+        }
+        println("$search\nNOT FOUND")
+        return  -1
     }
 
 
@@ -174,6 +218,9 @@ data class Radioisotope(val elevator: Int, val levels: List<Elems>) {
 }
 
 data class Elems(val l : List<String>) : List<String> by l {
+    init {
+        Collections.sort(l)
+    }
     fun activeChips(): Elems {
         val chips = chips().l.filter { s -> l.contains(s.replace('M', 'G')) }
         return Elems(chips)
