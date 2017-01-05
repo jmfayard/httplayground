@@ -25,3 +25,13 @@ fun osxOpenFile(file: File)  {
     val errorValue = ProcessExecutor().command("/usr/bin/open", file.absolutePath).execute().exitValue
     if (errorValue!=0) { "Process exited with error: $errorValue" }
 }
+
+public fun printAsTable(vararg pairs: Pair<Any, Any>){
+    if (pairs.isEmpty()) return
+    val length = 3 + pairs.map { key -> key.first.toString().count() }.max()!!
+    val format = "%-${length}s %s"
+    for ((first, second) in pairs) {
+        println(String.format(format, first, second))
+    }
+}
+
