@@ -1,4 +1,3 @@
-import io.kotlintest.matchers.have
 import io.kotlintest.specs.StringSpec
 import java.util.*
 
@@ -15,6 +14,8 @@ The second floor contains a hydrogen generator.
 The third floor contains a lithium generator.
 The fourth floor contains nothing relevant.
 **/
+
+
 
 public fun elems(vararg e: String): Elems = Elems(listOf(*e))
 
@@ -84,7 +85,7 @@ class Day11 : StringSpec() { init {
             elems("PrG", "PrM", "RG", "RM"),
             elems()
         ))
-        RadioisotopeResolution(elementsBis).searchUntilFind(searchBis) shouldBe solution
+//        RadioisotopeResolution(elementsBis).searchUntilFind(searchBis) shouldBe solution
 
     }
 
@@ -215,6 +216,64 @@ data class Radioisotope(val elevator: Int, val levels: List<Elems>) {
             .filter {  move ->
                 this.moveElevator(false, move) != null
             }
+}
+
+data class IsotopeFactory(val elevator: Int, val levels: List<Int>) {
+  fun isValid() : Boolean {
+      val rangeOk = levels.all { v -> v in 1..4 }
+      val haveGenerators = levels.filterIndexed {i, v -> i.isEven() }.distinct()
+      val chipsAlones = levels.filterIndexed { i, v ->
+          i.isOdd() && levels[i-1] != v
+      }
+      val chipsBurned = chipsAlones.filter { v -> v in haveGenerators }
+      return  rangeOk && chipsBurned.isEmpty()
+  }
+
+    private fun moveElevator(up: Boolean, i1: Int, i2: Int) : IsotopeFactory {
+        val new = ArrayList(levels)
+        val offset = if (up) 1 else -1
+        new[i1] += offset
+        if (i2 !=  i1) {
+            new[i2] += offset
+        }
+        return copy(elevator = elevator + offset, levels = new)
+    }
+
+    val currentLevelIndexes: List<Int> by lazy {
+        levels.indices.filter { levels[it] == elevator }
+    }
+
+    fun upMoves() : List<IsotopeFactory> =
+        if (elevator == 4) {
+            emptyList()
+        } else {
+            val result = mutableListOf<IsotopeFactory>()
+            for (i in currentLevelIndexes) {
+                for (j in currentLevelIndexes) {
+                    val move = moveElevator(true, i, j)
+                    if (move.isValid()) {
+                        result += move
+                    }
+                }
+            }
+            result
+        }
+
+    fun downMoves(): List<IsotopeFactory> =
+        if (elevator == 0) emptyList()
+        else {
+            val result = mutableListOf<IsotopeFactory>()
+            for (i in currentLevelIndexes) {
+                for (j in currentLevelIndexes) {
+                    val move = moveElevator(false, i, j)
+                    if (move.isValid()) {
+                        result += move
+                    }
+                }
+            }
+            result
+        }
+
 }
 
 data class Elems(val l : List<String>) : List<String> by l {

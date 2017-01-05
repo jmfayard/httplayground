@@ -5,6 +5,12 @@ fun <T> T.debug(name: String): T {
     return this
 }
 
+fun Int.isEven() : Boolean
+    = this.mod(2) == 0
+fun Int.isOdd() : Boolean
+    = this.mod(2) == 1
+
+
 /** Transform a list of Char into a UTF8 String **/
 fun  <T> Iterable<T>.asString(): String = joinToString(separator = "")
 
