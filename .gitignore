@@ -15,7 +15,7 @@ postman/newman
 env/
 build/
 dist/
-.gradle
+.gradle/
 .workon
 .epio-app
 *.pyc

@@ -61,7 +61,7 @@ dependencies {
 
 
     // RxJava
-    compile 'io.reactivex:rxjava:1.1.7'
+    compile 'io.reactivex:rxjava:1.2.4'
 
 
     // https://mvnrepository.com/artifact/com.github.fge/json-schema-validator
