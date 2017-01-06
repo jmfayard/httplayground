@@ -21,6 +21,9 @@ repositories {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+    compile "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+
     compile 'org.jfree:jfreechart:1.0.17'
     compile 'args4j:args4j:2.0.26'
     testCompile 'junit:junit:4.11'

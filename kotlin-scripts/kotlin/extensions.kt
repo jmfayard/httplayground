@@ -8,6 +8,11 @@ fun <T> T.debug(name: String): T {
     println("DEBUG: ${name} = ${toString()}")
     return this
 }
+fun <T> List<T>.printList(name: String){
+    forEachIndexed { i, t ->
+        println("$name[$i] : $t")
+    }
+}
 
 fun BufferedSink.newLine() = writeUtf8("\n")
 
