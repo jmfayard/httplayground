@@ -32,6 +32,7 @@ After parsing / unparsing
 
 
 val items = listOf(
+//    testFile("json/2_objet.json")
     testFile("json/0_simple.json"),
     testFile("json/1_list.json"),
     testFile("json/2_objet.json"),
@@ -39,7 +40,7 @@ val items = listOf(
     testFile("json/4_complex.json")
 )
 val classes = items.mapIndexed { i, file ->
-    val className = if (i in listOf(1, 4)) "List<T1>" else "T0"
+    val className = if (i in listOf(1, 4)) "List<T1>" else "T1"
     Pair(file, className)
 }.toMap()
 

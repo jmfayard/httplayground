@@ -43,7 +43,7 @@ fun main(args: Array<String>) {
 
 }
 
-fun generateDataclassCode(jsonSource: BufferedSource) : String {
+fun generateDataclassCode(jsonSource: BufferedSource): String {
     val reader = JsonReader.of(jsonSource)
     if (!reader.hasNext()) help()
 
@@ -71,21 +71,27 @@ sealed class Schema(var type: String?) {
     class O(val properties: Map<String, Schema>) : Schema(null) {
         override fun toString(): String = "O($type, $properties)"
     }
-    class L<out T : Schema>(val list: List<T>) : Schema(null) {
+
+    class L<out T : Schema>(val list: List<T>) : Schema("List") {
         override fun toString(): String = "L($type, $list)"
     }
+
     object I : Schema("Int") {
         override fun toString(): String = "I"
     }
+
     object D : Schema("Double") {
         override fun toString(): String = "D"
     }
+
     object B : Schema("Boolean") {
         override fun toString(): String = "B"
     }
+
     object S : Schema("String") {
         override fun toString(): String = "S"
     }
+
     object N : Schema("Any?") {
         override fun toString(): String = "N"
     }
@@ -117,7 +123,6 @@ fun schemaOf(value: Any?): Schema = when (value) {
 }
 
 
-
 object Json {
     val moshi = Moshi.Builder().build()
     val mapAdapter = moshi.adapter(Map::class.java)
@@ -126,8 +131,32 @@ object Json {
 
 data class KotlinPoet(val schema: Schema) {
 
+    var i = 1
+    val normlalizedSchema: Schema
+
+    fun normalize(s: Schema): Schema = when {
+        s is Schema.L<*> && s.list.isEmpty() -> s
+        s is Schema.L<*> && s.list.first() is Schema.O -> {
+            val merged = s.list.map { o -> normalize(o) } as List<Schema.O>
+            val mergedEntries = merged
+                .flatMap { o -> o.properties.entries }
+                .distinctBy { it.key }
+                .associate { it.key to it.value }
+
+            Schema.L(listOf(Schema.O(mergedEntries)))
+        }
+        s is Schema.O -> {
+            val properties = s.properties.map { entry ->
+                entry.key to normalize(entry.value)
+            }.toMap()
+            Schema.O(properties)
+        }
+        else -> s
+    }
+
     init {
-        var i = 0
+        normlalizedSchema = normalize(schema)
+        var i = 1
         forAllTypes { s: Schema ->
             if (s.type == null) {
                 s.type = "T${i++}"
@@ -137,7 +166,7 @@ data class KotlinPoet(val schema: Schema) {
 
     fun forAllTypes(operation: (Schema) -> Unit) {
         val stack = Stack<Schema>()
-        stack.addElement(schema)
+        stack.addElement(normlalizedSchema)
         while (stack.isNotEmpty()) {
             val s = stack.pop()
             operation(s)
@@ -182,6 +211,8 @@ data class KotlinPoet(val schema: Schema) {
 
     fun dataClasses(): List<DataClass> {
         val result = mutableListOf<DataClass>()
+        val ignored = mutableListOf<Schema.O>()
+
         forAllTypes { s: Schema ->
             if (s is Schema.O) {
                 result += objectClass(s)
