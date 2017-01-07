@@ -1,0 +1,71 @@
+[
+  {
+    "id": 1,
+    "createdAt": "2016-12-09 16:30:29",
+    "start_at": "2016-12-01 00:00:00",
+    "end_at": "2016-12-25 00:00:00",
+    "artist": "Laura Pausini",
+    "action": "Christmas 2016",
+    "placement": "1. Etage",
+    "type": "Aufsteller",
+    "items_amount": 40,
+    "items_sold": 15,
+    "market": {
+      "id": 2,
+      "customer_id": "176222",
+      "name": "Berlin Market"
+    },
+    "video": {
+      "id": 2,
+      "type": "video/mpeg",
+      "createdAt": "2016-12-09T16:28:33Z",
+      "url": "https://example.com/video.mp4"
+    },
+    "pictures": [
+      {
+        "id": 1,
+        "type": "image/jpeg",
+        "createdAt": "2016-12-09T16:28:24Z",
+        "url": "https://example.com/lolcat.jpeg"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "createdAt": "2016-12-13 12:38:50",
+    "start_at": "2016-12-07 00:00:00",
+    "end_at": "2016-12-17 00:00:00",
+    "artist": "Bob Marley",
+    "action": "New Eve 2017",
+    "placement": "2. Etage",
+    "type": "Weinachstmarkt",
+    "items_amount": 1000,
+    "items_sold": 1,
+    "market": {
+      "id": 1,
+      "customer_id": "176212",
+      "name": "MARKET XZT"
+    },
+    "video": null,
+    "pictures": []
+  },
+  {
+    "id": 3,
+    "createdAt": "2017-01-06 17:20:08",
+    "start_at": "2016-01-01 00:00:00",
+    "end_at": "2016-01-31 00:00:00",
+    "artist": "Laura Pausini",
+    "action": "Christmas 2016",
+    "placement": "1. Etage",
+    "type": "Aufsteller",
+    "items_amount": 40,
+    "items_sold": 15,
+    "market": {
+      "id": 1,
+      "customer_id": "176212",
+      "name": "BLN ALEX SAT"
+    },
+    "video": null,
+    "pictures": []
+  }
+]

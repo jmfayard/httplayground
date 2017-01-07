@@ -1,0 +1,9 @@
+[
+  {
+    "ok": true
+  },
+  {
+    "ok": false,
+    "required": true
+  }
+]

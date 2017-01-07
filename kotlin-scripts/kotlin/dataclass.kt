@@ -4,6 +4,7 @@ package dataclass
 
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.Moshi
+import okio.BufferedSource
 import okio.Okio
 import java.io.File
 import java.util.*
@@ -37,8 +38,13 @@ fun main(args: Array<String>) {
         help()
         return
     }
-    val source = Okio.buffer(Okio.source(stream))
-    val reader = JsonReader.of(source)
+    val code = generateDataclassCode(jsonSource = Okio.buffer(Okio.source(stream)))
+    println(code)
+
+}
+
+fun generateDataclassCode(jsonSource: BufferedSource) : String {
+    val reader = JsonReader.of(jsonSource)
     if (!reader.hasNext()) help()
 
     val adapter = if (reader.peek() == JsonReader.Token.BEGIN_ARRAY) {
@@ -52,7 +58,7 @@ fun main(args: Array<String>) {
     val generator = KotlinPoet(schema)
     val classes = generator.dataClasses()
     val code = classes.map { generator.generateKotlinCode(it) }.joinToString(separator = "")
-    println(code)
+    return code
 
 }
 
@@ -98,32 +104,11 @@ fun schemaOf(name: String, value: Any?): Schema = when (value) {
 }
 
 
-//FIXME: test
-val json = """
-{
-  "address": {
-    "streetAddress": "21 2nd Street",
-    "city": "New York"
-  },
-  "phoneNumber": [
-    {
-      "location": "home",
-      "code": 44
-    }
-  ],
-  "price" : 98.245,
-  "age": 24,
-  "free": true,
-  "name": "JMF",
-  "something" : null
-}
-""".trim()
 
 object Json {
     val moshi = Moshi.Builder().build()
     val mapAdapter = moshi.adapter(Map::class.java)
     val listAdapter = moshi.adapter(List::class.java)
-
 }
 
 data class KotlinPoet(val schema: Schema) {
@@ -168,8 +153,12 @@ data class KotlinPoet(val schema: Schema) {
         val properties = schema.properties.entries.map {
             val (name: String, s: Schema) = it
             val type = if (s is Schema.L<*>) {
-                val child = s.list.first()
-                "List<${child.type}>"
+                if (s.list.isEmpty()) {
+                    "List<Any?>"
+                } else {
+                    val child = s.list.first()
+                    "List<${child.type}>"
+                }
             } else {
                 s.type!!
             }

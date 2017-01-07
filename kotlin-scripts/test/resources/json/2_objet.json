@@ -1,0 +1,17 @@
+{
+  "address": {
+    "streetAddress": "21 2nd Street",
+    "city": "New York"
+  },
+  "phoneNumber": [
+    {
+      "location": "home",
+      "code": 44
+    }
+  ],
+  "price" : 98.245,
+  "age": 24,
+  "free": true,
+  "name": "JMF",
+  "something" : null
+}

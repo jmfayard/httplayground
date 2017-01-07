@@ -1,6 +1,7 @@
 import okio.BufferedSink
 import okio.BufferedSource
 import okio.Okio
+import org.intellij.lang.annotations.Language
 import org.zeroturnaround.exec.ProcessExecutor
 import java.io.File
 
@@ -17,9 +18,16 @@ fun <T> List<T>.printList(name: String){
 fun BufferedSink.newLine() = writeUtf8("\n")
 
 
-fun File.okSource(): BufferedSource = Okio.buffer(Okio.source(this))
+fun File.okSource(): BufferedSource {
+    require(canRead()) { "Cannot read from $absolutePath" }
+    return Okio.buffer(Okio.source(this))
+}
 
-fun File.okSink(): BufferedSink = Okio.buffer(Okio.sink(this))
+fun File.okSink(): BufferedSink {
+    val ok = if (exists()) canWrite() else parentFile.canWrite()
+    require(ok) { "Cannot write to $absolutePath" }
+    return Okio.buffer(Okio.sink(this))
+}
 
 fun File.okAppendingSink(): BufferedSink = Okio.buffer(Okio.appendingSink(this))
 
@@ -40,3 +48,18 @@ public fun printAsTable(vararg pairs: Pair<Any, Any>){
     }
 }
 
+/** Gives a valid file in src/main/resources **/
+public fun resourceFile(@Language("File") path: String): File {
+    val fileName = "src/main/resources/$path"
+    val file = File(fileName)
+    assert(file.canRead()) { "Cannot read testResourceFile($path) = ${file.absolutePath}" }
+    return file
+}
+
+/** Gives a valid file in src/test/resources **/
+public fun testFile(@Language("File") path: String): File {
+    val fileName = "test/resources/$path"
+    val file = File(fileName)
+    assert(file.canRead()) { "Cannot read testResourceFile($path) = ${file.absolutePath}" }
+    return file
+}
