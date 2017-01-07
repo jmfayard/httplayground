@@ -6,8 +6,11 @@ import newLine
 import okSink
 import okSource
 import testFile
+import toPrettyJson
 import java.io.File
 
+
+val moshi = Moshi.Builder().build()
 
 inline fun <reified T : Any> tryParsing(json: String) {
     println("""
@@ -18,13 +21,16 @@ $json
 After parsing / unparsing
 ------
 """
-)
-    val moshi = Moshi.Builder().build()
+    )
+
     val adapter = moshi.adapter(T::class.java)
+
     val parsed = adapter.fromJson(json)
-    val toJson = adapter.toJson(parsed)
+    val toJson = adapter.toPrettyJson(parsed)
     println(toJson)
 }
+
+
 val items = listOf(
     testFile("json/0_simple.json"),
     testFile("json/1_list.json"),
@@ -42,24 +48,25 @@ class GenerateDataClass : StringSpec() { init {
 
     for (file in items) {
         "From ${file.name}..." {
+            val tripleQuotes = "\"\"\""
             val json = file.readText()
-            val code = generateDataclassCode(file.okSource())
-            file.kotlinOutput().okSink().use { sink ->
-                val intro = """
+            val classCode = generateDataclassCode(file.okSource())
+            val code = """
 package Gen${i++}
 import dataclass.tryParsing
 
 fun main(args: Array<String>) {
     tryParsing<${classes[file]}>(json)
 }
+private val json = $tripleQuotes
+$json
+$tripleQuotes
+
+$classCode
                 """
-                sink
-                    .writeUtf8(intro)
-                    .writeUtf8("val json = \"\"\" ")
-                    .writeUtf8(json)
-                    .writeUtf8("\"\"\"")
-                    .newLine()
-                    .writeUtf8(code)
+
+            file.kotlinOutput().okSink().use { sink ->
+                sink.writeUtf8(code)
             }
         }
     }

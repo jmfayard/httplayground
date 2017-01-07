@@ -54,7 +54,7 @@ fun generateDataclassCode(jsonSource: BufferedSource) : String {
     }
 
     val data = adapter.fromJson(reader)
-    val schema = schemaOf("root", data)
+    val schema = schemaOf(data)
     val generator = KotlinPoet(schema)
     val classes = generator.dataClasses()
     val code = classes.map { generator.generateKotlinCode(it) }.joinToString(separator = "")
@@ -66,39 +66,52 @@ fun generateDataclassCode(jsonSource: BufferedSource) : String {
 data class DataClass(val name: String, val properties: List<DataClassProp>)
 data class DataClassProp(val name: String, val type: String, val defaultValue: String?, val required: Boolean)
 
-sealed class Schema(val name: String, var type: String?) {
-    override fun toString(): String = "Schmea($name, $type, ${this.javaClass.simpleName})"
+sealed class Schema(var type: String?) {
 
-    class O(name: String, val properties: Map<String, Schema>) : Schema(name, null)
-    class L<out T : Schema>(name: String, val list: List<T>) : Schema(name, null)
-    class I(name: String, val i: Int) : Schema(name, "Int")
-    class D(name: String, val d: Double) : Schema(name, "Double")
-    class B(name: String, val b: Boolean) : Schema(name, "Boolean")
-    class S(name: String, val s: String) : Schema(name, "String")
-    class N(name: String) : Schema(name, "Any?")
+    class O(val properties: Map<String, Schema>) : Schema(null) {
+        override fun toString(): String = "O($type, $properties)"
+    }
+    class L<out T : Schema>(val list: List<T>) : Schema(null) {
+        override fun toString(): String = "L($type, $list)"
+    }
+    object I : Schema("Int") {
+        override fun toString(): String = "I"
+    }
+    object D : Schema("Double") {
+        override fun toString(): String = "D"
+    }
+    object B : Schema("Boolean") {
+        override fun toString(): String = "B"
+    }
+    object S : Schema("String") {
+        override fun toString(): String = "S"
+    }
+    object N : Schema("Any?") {
+        override fun toString(): String = "N"
+    }
 }
 
 
-fun schemaOf(name: String, value: Any?): Schema = when (value) {
-    null -> Schema.N(name)
-    is Boolean -> Schema.B(name, value)
+fun schemaOf(value: Any?): Schema = when (value) {
+    null -> Schema.N
+    is Boolean -> Schema.B
     is Number -> {
         val double = value.toDouble()
         if (double == Math.floor(double))
-            Schema.I(name, value.toInt())
+            Schema.I
         else
-            Schema.D(name, double)
+            Schema.D
     }
-    is String -> Schema.S(name, value)
+    is String -> Schema.S
     is List<*> -> {
-        val children = value.map { e -> schemaOf(name, e) }
-        Schema.L(name, children)
+        val children = value.map { e -> schemaOf(e) }
+        Schema.L(children)
     }
     is Map<*, *> -> {
         val children = value.mapValues { e ->
-            schemaOf(e.key as String, e.value)
+            schemaOf(e.value)
         }
-        Schema.O(name, children as Map<String, Schema>)
+        Schema.O(children as Map<String, Schema>)
     }
     else -> TODO("Unexpected value $value")
 }

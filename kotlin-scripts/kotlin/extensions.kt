@@ -1,3 +1,6 @@
+import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.JsonWriter
+import okio.Buffer
 import okio.BufferedSink
 import okio.BufferedSource
 import okio.Okio
@@ -30,6 +33,13 @@ fun File.okSink(): BufferedSink {
 }
 
 fun File.okAppendingSink(): BufferedSink = Okio.buffer(Okio.appendingSink(this))
+
+fun  <T> JsonAdapter<T>.toPrettyJson(value: T, indent: String = "  ") : String {
+    val buffer = Buffer()
+    val writer = JsonWriter.of(buffer).apply { setIndent(indent) }
+    toJson(writer, value)
+    return buffer.readUtf8()
+}
 
 
 fun osxOpenFile(file: File)  {
