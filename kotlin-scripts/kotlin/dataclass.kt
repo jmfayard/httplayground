@@ -1,19 +1,58 @@
-package json2data
+#!/usr/bin/env kotlin-script.sh
+// Installation:  see kotlin-scripts/README.md
+package dataclass
 
+import com.squareup.moshi.JsonReader
 import com.squareup.moshi.Moshi
+import okio.Okio
+import java.io.File
 import java.util.*
 
+fun help() {
+    println("""
+$ dataclass.kt input.json
+$ dataclass.kt <<'JSON'
+{
+  "address": {
+    "streetAddress": "21 2nd Street", "city": "New York"
+  },
+  "phoneNumber": [
+    {
+      "location": "home", "code": 44
+    }
+  ],
+}
+JSON
+    """)
+    System.exit(1)
+}
 
 fun main(args: Array<String>) {
 
+    val stream = if (args.isNotEmpty() && File(args.first()).canRead()) {
+        File(args.first()).inputStream()
+    } else if (System.`in`.available() > 3) {
+        System.`in`
+    } else {
+        help()
+        return
+    }
+    val source = Okio.buffer(Okio.source(stream))
+    val reader = JsonReader.of(source)
+    if (!reader.hasNext()) help()
 
-    val data = moshiAdapter.fromJson(json)
+    val adapter = if (reader.peek() == JsonReader.Token.BEGIN_ARRAY) {
+        Json.listAdapter
+    } else {
+        Json.mapAdapter
+    }
+
+    val data = adapter.fromJson(reader)
     val schema = schemaOf("root", data)
     val generator = KotlinPoet(schema)
     val classes = generator.dataClasses()
     val code = classes.map { generator.generateKotlinCode(it) }.joinToString(separator = "")
     println(code)
-
 
 }
 
@@ -59,6 +98,7 @@ fun schemaOf(name: String, value: Any?): Schema = when (value) {
 }
 
 
+//FIXME: test
 val json = """
 {
   "address": {
@@ -79,8 +119,12 @@ val json = """
 }
 """.trim()
 
-val moshi = Moshi.Builder().build()
-val moshiAdapter = moshi.adapter(Map::class.java)
+object Json {
+    val moshi = Moshi.Builder().build()
+    val mapAdapter = moshi.adapter(Map::class.java)
+    val listAdapter = moshi.adapter(List::class.java)
+
+}
 
 data class KotlinPoet(val schema: Schema) {
 
