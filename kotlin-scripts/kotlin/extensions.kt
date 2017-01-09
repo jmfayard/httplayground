@@ -1,5 +1,8 @@
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonWriter
+import com.squareup.moshi.Moshi
+import com.squareup.tape.FileObjectQueue
+import com.squareup.tape.ObjectQueue
 import okio.Buffer
 import okio.BufferedSink
 import okio.BufferedSource
@@ -7,6 +10,7 @@ import okio.Okio
 import org.intellij.lang.annotations.Language
 import org.zeroturnaround.exec.ProcessExecutor
 import java.io.File
+import java.io.OutputStream
 
 fun <T> T.debug(name: String): T {
     println("DEBUG: ${name} = ${toString()}")
@@ -72,4 +76,36 @@ public fun testFile(@Language("File") path: String): File {
     val file = File(fileName)
     assert(file.canRead()) { "Cannot read testResourceFile($path) = ${file.absolutePath}" }
     return file
+}
+
+
+/** Square Tape **/
+public inline fun <T> ObjectQueue<T>.onElementAdded(crossinline operation: (T, ObjectQueue<T>) -> Unit) =
+    setListener(object : ObjectQueue.Listener<T> {
+        override fun onAdd(queue: ObjectQueue<T>, entry: T) {
+            operation(entry, queue)
+        }
+
+        override fun onRemove(queue: ObjectQueue<T>?) {
+            //
+        }
+
+    })
+
+inline fun <reified T : Any> TapeJsonConverter(moshi: Moshi): FileObjectQueue.Converter<T> {
+    val adapter = moshi.adapter(T::class.java)
+    return object : FileObjectQueue.Converter<T> {
+        override fun from(bytes: ByteArray?): T {
+            val buffer = Buffer()
+            buffer.write(bytes)
+            return adapter.fromJson(buffer)
+        }
+
+        override fun toStream(o: T, bytes: OutputStream) {
+            val buffer = Okio.buffer(Okio.sink(bytes))
+            adapter.toJson(buffer, o)
+            buffer.close()
+        }
+
+    }
 }

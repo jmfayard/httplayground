@@ -6,3 +6,4 @@ target
 build/
 lib/
 generated*kt
+persisted_tasks

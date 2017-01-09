@@ -69,6 +69,9 @@ dependencies {
     compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.22'
 
 
+    // https://mvnrepository.com/artifact/com.squareup/tape
+    compile group: 'com.squareup', name: 'tape', version: '1.2.3'
+
 
 }
 
