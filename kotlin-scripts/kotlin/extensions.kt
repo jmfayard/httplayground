@@ -53,6 +53,12 @@ fun osxOpenFile(file: File)  {
     if (errorValue!=0) { "Process exited with error: $errorValue" }
 }
 
+fun osxOpenUrl(url: String)  {
+    val errorValue = ProcessExecutor().command("/usr/bin/open", url).execute().exitValue
+    println("$ open ${url}")
+    if (errorValue!=0) { "Process exited with error: $errorValue" }
+}
+
 public fun printAsTable(vararg pairs: Pair<Any, Any>){
     if (pairs.isEmpty()) return
     val length = 3 + pairs.map { key -> key.first.toString().count() }.max()!!

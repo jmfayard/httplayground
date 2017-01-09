@@ -72,6 +72,10 @@ dependencies {
     // https://mvnrepository.com/artifact/com.squareup/tape
     compile group: 'com.squareup', name: 'tape', version: '1.2.3'
 
+    // Pollexor: Java client for the Thumbor image service which allows you to build URIs in an expressive fashion using a fluent API.
+    // http://square.github.io/pollexor/
+    compile group: 'com.squareup', name: 'pollexor', version: '2.0.4'
+
 
 }
 
